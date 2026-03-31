@@ -1,5 +1,7 @@
 Projeto Aplicado 03 - DataScience - Mackenzie/2026 📊
 Projeto iniciado
+---
+![Banner PAI](https://github.com/GrupoMackenzie/ProjetoAplicado03-DataScience-Mackenzie-2026/blob/51d61de47dd0004ccd41d2c167bccb7763757996/Curso%20de%20Ci%C3%AAncia%20de%20Dados%20Mackenzie.png)
 
 📌 Descrição do Projeto
 A proposta do projeto é desenvolver uma solução de recomendação de upgrades de sistema em computadores usados por gamers.
