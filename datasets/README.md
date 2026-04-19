@@ -1,5 +1,9 @@
 # Datasets
 
+CPU_UserBenchmarks by UserBenchmark.com
+
+* https://www.userbenchmark.com/resources/download/csv/CPU_UserBenchmarks.csv
+
 AMD e INTEL dataset (AMD.csv, INTEL.csv)
 
 * https://www.kaggle.com/datasets/alanjo/amd-processor-specifications/
