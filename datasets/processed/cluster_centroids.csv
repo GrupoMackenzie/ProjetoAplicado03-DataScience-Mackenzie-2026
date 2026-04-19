@@ -1,0 +1,5 @@
+cluster_id,cluster_label,cpu_speed_ghz,cpu_cores,cpu_threads,gpu_memory_mb,gpu_tmus,gpu_rops,ram_gb
+0,AAA High Graphics,3.54,6,8,6080,138,51,11.4
+1,Easy,2.17,2,1,529,15,3,2.0
+2,AAA Medium Graphics,3.34,5,6,2535,90,32,7.4
+3,Competitive/E-Sports,2.89,3,3,1170,43,17,4.3
