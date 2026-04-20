@@ -1,6 +1,6 @@
 # Datasets
 
-### Steam Games Requirements (steam_games_requirements.csv) by HuggingFace
+### Steam Games Requirements (raw/steam_games_requirements.csv) by HuggingFace
 
 * https://huggingface.co/datasets/swamysharavana/steam_games.csv
 - Records: ~40,000
