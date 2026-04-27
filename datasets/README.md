@@ -70,11 +70,6 @@
 
 * Intel Supported Sockets: 1150/1151/1200/1700/1851
 
-### GPUs
+**TODO: Scraping to get updated hardware prices for best results**
 
-CPU Datasets with clockspeed, number of cores/threads
-* **Features:** processor, year, cores, threads, baseClock, maxboostClock, L1, L2, L3(Caches), memType, memSpec, Socket
-
-* **TODO: Scraping to get updated hardware prices for best results**
-
-* **TODO: Adopt LightGBM and RSO for k-means optimization**
+**TODO: Adopt LightGBM and RSO for k-means optimization**
