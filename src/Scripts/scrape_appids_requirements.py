@@ -12,8 +12,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-INPUT_CSV = BASE_DIR / 'datasets' / 'scraped' / 'mostwishlisted_games.csv'
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+INPUT_CSV = BASE_DIR / 'datasets' / 'scraped' / 'steamdb_relevant_games.csv'
 OUTPUT_CSV = BASE_DIR / 'datasets' / 'scraped' / 'steam_requirements_scraped.csv'
 INTERVAL = 200
 
@@ -39,6 +39,8 @@ def parse_pc_requirements(pc_req):
         return pc_req.get('minimum', '') or '', pc_req.get('recommended', '') or ''
     return '', ''
 
+unsucessful = []
+
 def scrape_appid(appid, retries=3):
     url = API_URL.format(appid=appid)
     for attempt in range(retries):
@@ -59,6 +61,7 @@ def scrape_appid(appid, retries=3):
                         }
                     else:
                         logger.info(f"Unsuccesful: {appid}")
+                        unsucessful.append(appid)
             return None
         except Exception as e:
             if attempt < retries - 1:
@@ -132,6 +135,7 @@ def main():
     logger.info(f"Total scraped: {total_scraped}")
     logger.info(f"Time elapsed: {total_time:.1f} seconds ({total_time/60:.1f} minutes)")
     logger.info(f"Output: {OUTPUT_CSV}")
+    logger.info(f"Failed: {unsucessful}")
     logger.info("=" * 60)
 
 if __name__ == '__main__':
