@@ -63,7 +63,7 @@ Etapa | Descrição
 ---
 1. Clonar este repositório:  
    ```bash
-   #git clone https://github.com/GrupoMackenzie/ProjetoAplicado02-DataScience-Mackenzie-2025.git
+   #git clone https://github.com/GrupoMackenzie/ProjetoAplicado03-DataScience-Mackenzie-2026
 
 2. Resolver dependências   
    ```bash
