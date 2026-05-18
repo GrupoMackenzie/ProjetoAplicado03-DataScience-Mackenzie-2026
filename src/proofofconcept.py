@@ -1,4 +1,3 @@
-# AI PoC
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
@@ -32,8 +31,7 @@ knn.fit(features.values)
 
 # 5. Testando o Modelo: O usuário quer gastar $1100 e quer alta performance (~80 pontos)
 user_request = [[90, 90, 400]]
-distances, indices = knn.kneighbors(user_request)
+indices = knn.kneighbors(user_request, return_distance=False)
 
 recommended_build = df_balanced.iloc[indices[0][0]]
 print("Build Recomendada:\n", recommended_build)
-print(distances)
