@@ -1,25 +1,44 @@
 import pickle
+import random
+import re
+import tomllib
 import streamlit as st
 import pandas as pd
 import numpy as np
 from thefuzz import process
 from pathlib import Path
-import csv
 from datetime import datetime
+from supabase import create_client, Client
 
-FEEDBACK_FILE = Path(__file__).parent / "feedback.csv"
-def save_feedback(game, score, cluster, neighbors, rating):
-    if not FEEDBACK_FILE.exists():
-        with open(FEEDBACK_FILE, "w", newline="", encoding="utf-8") as f:
-            csv.writer(f).writerow([
-                "timestamp","game","cpu_score","cluster",
-                "neighbor_1","neighbor_2","neighbor_3","rating"
-            ])
-    with open(FEEDBACK_FILE, "a", newline="", encoding="utf-8") as f:
-        csv.writer(f).writerow([
-            datetime.now().isoformat(), game,
-            f"{score:.1f}", cluster, *neighbors, rating
-        ])
+# ── Supabase ──────────────────────────────────────────────
+@st.cache_resource
+def get_supabase() -> Client:
+    try:
+        cfg = st.secrets["supabase"]
+    except Exception:
+        env_path = Path(__file__).parent / ".env"
+        with open(env_path, "rb") as f:
+            cfg = tomllib.load(f)["supabase"]
+    return create_client(cfg["url"], cfg["key"])
+
+def email_exists(email: str) -> bool:
+    result = get_supabase().table("feedback").select("email").eq("email", email).execute()
+    return len(result.data) > 0
+
+def save_feedback(email, game, score, cluster, neighbors, rating):
+    get_supabase().table("feedback").insert({
+        "email": email,
+        "game": game,
+        "cpu_score": round(score, 1),
+        "cluster": cluster,
+        "neighbor_1": neighbors[0] if len(neighbors) > 0 else "",
+        "neighbor_2": neighbors[1] if len(neighbors) > 1 else "",
+        "neighbor_3": neighbors[2] if len(neighbors) > 2 else "",
+        "rating": rating,
+    }).execute()
+
+def validate_email(email: str) -> bool:
+    return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email))
 
 HERE = Path(__file__).parent.resolve()
 ARTIFACTS = HERE / "artifacts"
@@ -50,6 +69,42 @@ games, games_filtered, knn, cluster_names = load_artifacts()
 st.set_page_config(page_title="HardwareMatch", layout="centered")
 st.title("HardwareMatch")
 st.markdown("Descubra qual nível de CPU seu jogo exige e encontre jogos com demandas similares.")
+
+# ── Email verification gate ──────────────────────────────
+if not st.session_state.get("email_verified"):
+    with st.container(border=True):
+        st.subheader("📧 Verificação de Email")
+        st.markdown("Insira seu email para continuar. Apenas **um feedback por email**.")
+
+        email = st.text_input("Email", placeholder="seu@email.com", key="gate_email")
+
+        if st.button("Enviar código", key="send_code"):
+            if not email:
+                st.warning("Digite um email.")
+            elif not validate_email(email):
+                st.error("Formato de email inválido.")
+            elif email_exists(email):
+                st.error("Este email já enviou um feedback. Apenas um feedback por email é permitido.")
+            else:
+                code = random.randint(100000, 999999)
+                st.session_state.verification_code = str(code)
+                st.session_state.pending_email = email
+                st.info(f"Código de verificação: **{code}**")
+                st.rerun()
+
+        if st.session_state.get("verification_code"):
+            code_input = st.text_input("Código de verificação", placeholder="000000", key="gate_code")
+            if st.button("Verificar", key="verify_code"):
+                if code_input == st.session_state.verification_code:
+                    st.session_state.email_verified = True
+                    st.session_state.verified_email = st.session_state.pending_email
+                    st.success("Email verificado com sucesso!")
+                    st.rerun()
+                else:
+                    st.error("Código incorreto. Tente novamente.")
+
+    st.stop()
+# ─────────────────────────────────────────────────────────
 
 tab1, tab2 = st.tabs(["🔍 Buscar por Jogo", "📊 Buscar por Pontuação"])
 
@@ -105,6 +160,7 @@ with tab1:
                 rating = st.slider("Qual a probabilidade de você comprar essa CPU?", 0, 10, 5)
                 if st.form_submit_button("Enviar"):
                     save_feedback(
+                        st.session_state.verified_email,
                         r["game_input"], r["score"], r["label"],
                         [games.loc[games_filtered.iloc[idx].name]['name']
                          for idx in r["indices"][0]],
