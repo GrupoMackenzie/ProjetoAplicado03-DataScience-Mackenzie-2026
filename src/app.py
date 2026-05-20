@@ -9,6 +9,8 @@ from thefuzz import process
 from pathlib import Path
 from datetime import datetime
 from supabase import create_client, Client
+import smtplib
+from email.message import EmailMessage
 
 # ── Supabase ──────────────────────────────────────────────
 @st.cache_resource
@@ -39,6 +41,24 @@ def save_feedback(email, game, score, cluster, neighbors, rating):
 
 def validate_email(email: str) -> bool:
     return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email))
+
+def send_verification_code(recipient: str, code: str) -> bool:
+    try:
+        cfg = st.secrets["smtp"]
+    except Exception:
+        env_path = Path(__file__).parent / ".env"
+        with open(env_path, "rb") as f:
+            cfg = tomllib.load(f)["smtp"]
+    msg = EmailMessage()
+    msg.set_content(f"Seu código de verificação do HardwareMatch é: {code}")
+    msg["Subject"] = "HardwareMatch — Código de Verificação"
+    msg["From"] = cfg["email"]
+    msg["To"] = recipient
+    with smtplib.SMTP(cfg["server"], int(cfg["port"])) as server:
+        server.starttls()
+        server.login(cfg["email"], cfg["password"])
+        server.send_message(msg)
+    return True
 
 HERE = Path(__file__).parent.resolve()
 ARTIFACTS = HERE / "artifacts"
@@ -89,7 +109,12 @@ if not st.session_state.get("email_verified"):
                 code = random.randint(100000, 999999)
                 st.session_state.verification_code = str(code)
                 st.session_state.pending_email = email
-                st.info(f"Código de verificação: **{code}**")
+                try:
+                    send_verification_code(email, str(code))
+                    st.success("Código enviado para seu email!")
+                except Exception as e:
+                    st.warning(f"Não foi possível enviar o email ({e}). Use o código abaixo:")
+                    st.info(f"Código de verificação: **{code}**")
                 st.rerun()
 
         if st.session_state.get("verification_code"):
