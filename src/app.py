@@ -7,28 +7,43 @@ import pandas as pd
 import numpy as np
 from thefuzz import process
 from pathlib import Path
-from supabase import create_client, Client
 import smtplib
 from email.message import EmailMessage
+import requests
 
-# ── Supabase ──────────────────────────────────────────────
+# ── Supabase REST (no WebSocket) ─────────────────────────
 @st.cache_resource
-def get_supabase() -> Client:
+def _supabase_config() -> dict:
     try:
-        cfg = st.secrets["supabase"]
+        return st.secrets["supabase"]
     except Exception:
         env_path = Path(__file__).parent / ".env"
         with open(env_path, "rb") as f:
-            cfg = tomllib.load(f)["supabase"]
-    return create_client(cfg["url"], cfg["key"])
+            return tomllib.load(f)["supabase"]
+
+def _rest_headers():
+    key = _supabase_config()["key"]
+    return {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+    }
 
 def email_exists(email: str) -> bool:
-    result = get_supabase().table("feedback").select("email").eq("email", email).execute()
-    return len(result.data) > 0
+    url = f"{_supabase_config()['url'].rstrip('/')}/rest/v1/feedback"
+    r = requests.get(
+        url,
+        params={"email": f"eq.{email}", "select": "email"},
+        headers=_rest_headers(),
+    )
+    r.raise_for_status()
+    return len(r.json()) > 0
 
 def save_feedback(email, game, score, cluster, neighbors, rating):
-    try:
-        get_supabase().table("feedback").insert({
+    url = f"{_supabase_config()['url'].rstrip('/')}/rest/v1/feedback"
+    r = requests.post(
+        url,
+        json={
             "email": email,
             "game": game,
             "cpu_score": round(score, 1),
@@ -37,14 +52,14 @@ def save_feedback(email, game, score, cluster, neighbors, rating):
             "neighbor_2": neighbors[1] if len(neighbors) > 1 else "",
             "neighbor_3": neighbors[2] if len(neighbors) > 2 else "",
             "rating": rating,
-        }).execute()
-        return True
-    except Exception as e:
-        if "23505" in str(e) or "duplicate key" in str(e).lower():
-            st.warning("Você já enviou feedback com este email.")
-        else:
-            st.error(f"Erro ao salvar feedback: {e}")
+        },
+        headers=_rest_headers(),
+    )
+    if r.status_code == 409:
+        st.warning("Você já enviou feedback com este email.")
         return False
+    r.raise_for_status()
+    return True
 
 def validate_email(email: str) -> bool:
     return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email))
