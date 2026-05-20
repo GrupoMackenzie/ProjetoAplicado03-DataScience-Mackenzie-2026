@@ -7,7 +7,6 @@ import pandas as pd
 import numpy as np
 from thefuzz import process
 from pathlib import Path
-from datetime import datetime
 from supabase import create_client, Client
 import smtplib
 from email.message import EmailMessage
@@ -173,7 +172,7 @@ with tab1:
 
         if r["score"] is not None:
             st.divider()
-            st.subheader("Jogos Similares")
+            st.subheader("Jogos com Requisitos Similares")
             distances, indices = knn.kneighbors([[r["score"]]], return_distance=True)
             neighbors = games_filtered.iloc[indices[0]].copy()
             neighbors['distance'] = distances[0]
