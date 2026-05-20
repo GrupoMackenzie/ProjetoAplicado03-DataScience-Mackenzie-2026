@@ -27,16 +27,24 @@ def email_exists(email: str) -> bool:
     return len(result.data) > 0
 
 def save_feedback(email, game, score, cluster, neighbors, rating):
-    get_supabase().table("feedback").insert({
-        "email": email,
-        "game": game,
-        "cpu_score": round(score, 1),
-        "cluster": cluster,
-        "neighbor_1": neighbors[0] if len(neighbors) > 0 else "",
-        "neighbor_2": neighbors[1] if len(neighbors) > 1 else "",
-        "neighbor_3": neighbors[2] if len(neighbors) > 2 else "",
-        "rating": rating,
-    }).execute()
+    try:
+        get_supabase().table("feedback").insert({
+            "email": email,
+            "game": game,
+            "cpu_score": round(score, 1),
+            "cluster": cluster,
+            "neighbor_1": neighbors[0] if len(neighbors) > 0 else "",
+            "neighbor_2": neighbors[1] if len(neighbors) > 1 else "",
+            "neighbor_3": neighbors[2] if len(neighbors) > 2 else "",
+            "rating": rating,
+        }).execute()
+        return True
+    except Exception as e:
+        if "23505" in str(e) or "duplicate key" in str(e).lower():
+            st.warning("Você já enviou feedback com este email.")
+        else:
+            st.error(f"Erro ao salvar feedback: {e}")
+        return False
 
 def validate_email(email: str) -> bool:
     return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email))
@@ -180,19 +188,24 @@ with tab1:
                 games.loc[neighbors.index][['name', 'min_cpu', 'cpu_bench']],
                 width='stretch'
             )
-            with st.form("feedback_form"):
-                rating = st.slider("Qual a probabilidade de você comprar essa CPU?", 0, 10, 5)
-                if st.form_submit_button("Enviar"):
-                    save_feedback(
-                        st.session_state.verified_email,
-                        r["game_input"], r["score"], r["label"],
-                        [games.loc[games_filtered.iloc[idx].name]['name']
-                         for idx in r["indices"][0]],
-                        rating
-                    )
-                    st.session_state.feedback_sent = True
-                    del st.session_state.results
-                    st.rerun()
+            if not st.session_state.get("feedback_submitted"):
+                with st.form("feedback_form"):
+                    rating = st.slider("Qual a probabilidade de você comprar essa CPU?", 0, 10, 5)
+                    if st.form_submit_button("Enviar"):
+                        ok = save_feedback(
+                            st.session_state.verified_email,
+                            r["game_input"], r["score"], r["label"],
+                            [games.loc[games_filtered.iloc[idx].name]['name']
+                             for idx in r["indices"][0]],
+                            rating
+                        )
+                        if ok:
+                            st.session_state.feedback_submitted = True
+                            st.session_state.feedback_sent = True
+                            del st.session_state.results
+                            st.rerun()
+            else:
+                st.info("Você já enviou seu feedback. Obrigado!")
 
 with tab2:
     score_input = st.number_input("Pontuação do CPU", min_value=0.0, max_value=200.0, step=1.0, value=70.0)
