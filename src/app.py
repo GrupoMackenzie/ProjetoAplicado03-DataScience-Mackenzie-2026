@@ -39,7 +39,7 @@ def email_exists(email: str) -> bool:
     r.raise_for_status()
     return len(r.json()) > 0
 
-def save_feedback(email, game, score, cluster, neighbors, rating):
+def save_feedback(email, game, score, cluster, neighbors, rating, observations=""):
     url = f"{_supabase_config()['url'].rstrip('/')}/rest/v1/feedback"
     r = requests.post(
         url,
@@ -52,6 +52,7 @@ def save_feedback(email, game, score, cluster, neighbors, rating):
             "neighbor_2": neighbors[1] if len(neighbors) > 1 else "",
             "neighbor_3": neighbors[2] if len(neighbors) > 2 else "",
             "rating": rating,
+            "observations": observations,
         },
         headers=_rest_headers(),
     )
@@ -206,13 +207,14 @@ with tab1:
             if not st.session_state.get("feedback_submitted"):
                 with st.form("feedback_form"):
                     rating = st.slider("Qual a probabilidade de você comprar essa CPU?", 0, 10, 5)
+                    observations = st.text_area("Observações (opcional)", placeholder="Compartilhe sua opinião sobre a recomendação...")
                     if st.form_submit_button("Enviar"):
                         ok = save_feedback(
                             st.session_state.verified_email,
                             r["game_input"], r["score"], r["label"],
                             [games.loc[games_filtered.iloc[idx].name]['name']
                              for idx in r["indices"][0]],
-                            rating
+                            rating, observations=observations
                         )
                         if ok:
                             st.session_state.feedback_submitted = True
