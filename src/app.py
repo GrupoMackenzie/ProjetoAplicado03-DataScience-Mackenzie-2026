@@ -39,13 +39,14 @@ def email_exists(email: str) -> bool:
     r.raise_for_status()
     return len(r.json()) > 0
 
-def save_feedback(email, game, score, cluster, neighbors, rating, observations=""):
+def save_feedback(email, game, score, cluster, neighbors, rating, observations="", raw_input=""):
     url = f"{_supabase_config()['url'].rstrip('/')}/rest/v1/feedback"
     r = requests.post(
         url,
         json={
             "email": email,
             "game": game,
+            "game_input": raw_input,
             "cpu_score": round(score, 1),
             "cluster": cluster,
             "neighbor_1": neighbors[0] if len(neighbors) > 0 else "",
@@ -211,10 +212,11 @@ with tab1:
                     if st.form_submit_button("Enviar"):
                         ok = save_feedback(
                             st.session_state.verified_email,
-                            r["game_input"], r["score"], r["label"],
+                            r["matched_name"], r["score"], r["label"],
                             [games.loc[games_filtered.iloc[idx].name]['name']
                              for idx in r["indices"][0]],
-                            rating, observations=observations
+                            rating, observations=observations,
+                            raw_input=r["game_input"]
                         )
                         if ok:
                             st.session_state.feedback_submitted = True
