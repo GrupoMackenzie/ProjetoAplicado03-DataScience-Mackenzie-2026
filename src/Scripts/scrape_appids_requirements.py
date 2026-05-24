@@ -39,6 +39,15 @@ def parse_pc_requirements(pc_req):
         return pc_req.get('minimum', '') or '', pc_req.get('recommended', '') or ''
     return '', ''
 
+def parse_release_date(rel_dat):
+    if rel_dat is None:
+        return '', ''
+    if isinstance(rel_dat, list):
+        return '', ''
+    if isinstance(rel_dat, dict):
+        return rel_dat.get('date', '') or ''
+    return '', ''
+
 unsucessful = []
 
 def scrape_appid(appid, retries=3):
@@ -53,11 +62,13 @@ def scrape_appid(appid, retries=3):
                     if app_data.get('success'):
                         inner = app_data.get('data', {})
                         min_req, rec_req = parse_pc_requirements(inner.get('pc_requirements'))
+                        release_date = parse_release_date(inner.get('release_date'))
                         return {
                             'steam_appid': appid,
                             'name': inner.get('name', ''),
+                            'release_date': release_date,
                             'pc_requirements_minimum': min_req,
-                            'pc_requirements_recommended': rec_req
+                            'pc_requirements_recommended': rec_req,
                         }
                     else:
                         logger.info(f"Unsuccesful: {appid}")
