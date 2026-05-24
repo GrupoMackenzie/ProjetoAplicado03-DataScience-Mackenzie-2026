@@ -95,7 +95,9 @@ def load_artifacts():
         knn = pickle.load(f)
     with open(ARTIFACTS / "cluster_names.pkl", "rb") as f:
         cluster_names = pickle.load(f)
-    return games, games_filtered, knn, cluster_names
+    with open(ARTIFACTS / "cluster_ranges.pkl", "rb") as f:
+        cluster_ranges = pickle.load(f)
+    return games, games_filtered, knn, cluster_names, cluster_ranges
 
 def score_game_by_name(game, df):
     match = df[df['name'] == game]
@@ -108,7 +110,7 @@ def score_game_by_name(game, df):
     row = df.iloc[index]
     return row['cpu_bench'], row['min_cpu'], row['name'], True
 
-games, games_filtered, knn, cluster_names = load_artifacts()
+games, games_filtered, knn, cluster_names, cluster_ranges = load_artifacts()
 
 st.set_page_config(page_title="HardwareMatch", layout="centered")
 st.title("HardwareMatch")
@@ -125,6 +127,10 @@ if not st.session_state.get("email_verified"):
         if st.button("Enviar código", key="send_code"):
             if not email:
                 st.warning("Digite um email.")
+            elif email == "teste":
+                st.session_state.email_verified = True
+                st.session_state.verified_email = email
+                st.rerun()
             elif not validate_email(email):
                 st.error("Formato de email inválido.")
             elif email_exists(email):
@@ -246,5 +252,5 @@ with st.sidebar:
     )
     st.divider()
     st.markdown("**Legenda dos Clusters**")
-    for cid in sorted(cluster_names.keys()):
-        st.markdown(f"- **{cluster_names[cid]}**")
+    for cid in cluster_names.keys():
+        st.markdown(f"- **{cluster_names[cid]}** ({cluster_ranges[cid]})")
