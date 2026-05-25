@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 INPUT_CSV = BASE_DIR / 'datasets' / 'scraped' / 'steamdb_relevant_games.csv'
 OUTPUT_CSV = BASE_DIR / 'datasets' / 'scraped' / 'steam_requirements_scraped.csv'
+OUTPUT_FAIL = BASE_DIR / 'datasets' / 'scraped' / 'steam_failed.csv'
 INTERVAL = 200
 
 API_URL = "https://store.steampowered.com/api/appdetails?appids={appid}"
@@ -90,9 +91,21 @@ def save_results(results, mode='a'):
     df.to_csv(OUTPUT_CSV, mode=mode_write, index=False, header=header, encoding='utf-8', quoting=csv.QUOTE_ALL)
     logger.info(f"Saved {len(results)} results. Total file size: {OUTPUT_CSV.stat().st_size} bytes")
 
+def save_failed(results, mode='a'):
+    if not results:
+        return
+    file_exists = OUTPUT_FAIL.exists() and OUTPUT_FAIL.stat().st_size > 0
+    mode_write = 'w' if mode == 'w' or not file_exists else 'a'
+    header = not file_exists
+    
+    df = pd.DataFrame({'failed_app_id': results})
+    df.to_csv(OUTPUT_FAIL, mode=mode_write, index=False, header=header, encoding='utf-8', quoting=csv.QUOTE_ALL)
+    logger.info(f"Saved {len(results)} results. Total file size: {OUTPUT_FAIL.stat().st_size} bytes")
+
 def main():
 
     appids = load_missing_appids()
+
     logger.info(f"Total appids to scrape: {len(appids)}")
     
     existing = get_existing_scraped()
@@ -101,7 +114,7 @@ def main():
     appids_to_scrape = [a for a in appids if a not in existing]
     logger.info(f"To scrape (head=10): {appids_to_scrape[:10]}")
     logger.info(f"Remaining to scrape: {len(appids_to_scrape)}")
-    
+
     if not appids_to_scrape:
         logger.info("Nothing to scrape. Shutting down...")
         return
@@ -133,9 +146,13 @@ def main():
         
         if results:
             save_results(results, mode='a')
+        if unsucessful:
+            save_failed(unsucessful, mode='a')
         
     except KeyboardInterrupt:
         logger.warning("Interrupted. Saving progress...")
+        if unsucessful:
+            save_failed(unsucessful, mode='a')
         if results:
             save_results(results, mode='a')
         return
