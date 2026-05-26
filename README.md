@@ -52,22 +52,28 @@ Etapa | Descrição
 ## 🛠 Tecnologias que estamos usando:
 ---
 
-- Python
-- Pandas, NumPy, Matplotlib, Seaborn
 - Jupyter Notebook
-- Git/GitHub
-- Pdfplumber
+- NumPy
+- Pandas
+- Plotly
 - Scikit-learn
+- TheFuzz
+- BeautifulSoup
+- Streamlit
 
 ## 🚀 Como Usar
 ---
 1. Clonar este repositório:  
    ```bash
-   #git clone https://github.com/GrupoMackenzie/ProjetoAplicado03-DataScience-Mackenzie-2026
+   git clone https://github.com/GrupoMackenzie/ProjetoAplicado03-DataScience-Mackenzie-2026
 
 2. Resolver dependências   
    ```bash
-   #pip install -r requirements.txt
+   pip install -r requirements.txt
+
+3. Rodar localmente
+   ```bash
+   streamlit run src/app.py
 
 ## 📊 Fonte dos Dados
 ---
