@@ -180,7 +180,7 @@ with tab1:
         else:
             match_row = games[games['cpu_bench'] == score]
             if not match_row.empty:
-                cluster = match_row['cluster'].iloc[0]
+                cluster = match_row['cluster_id'].iloc[0]
                 label = cluster_names.get(cluster, "Desconhecido")
             else:
                 cluster = None
